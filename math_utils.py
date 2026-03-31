@@ -1,5 +1,15 @@
 def calculate_ratio(total, count):
-    # 故意不处理 count 为 0 的逻辑
+    """Calculate the ratio of total to count.
+    
+    Args:
+        total: The numerator value
+        count: The denominator value
+    
+    Returns:
+        The ratio total/count, or 0.0 if count is zero to avoid division by zero.
+    """
+    if count == 0:
+        return 0.0
     return total / count
 
 if __name__ == "__main__":
