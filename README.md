@@ -283,21 +283,6 @@ KeyError: 'name'
 
 ---
 
-## 🧪 Testing
-
-```bash
-# Run all tests
-poetry run pytest tests/ -v
-
-# Run with coverage
-poetry run pytest tests/ --cov=app --cov-report=html
-
-# Run specific test file
-poetry run pytest tests/test_webhook.py -v
-```
-
----
-
 ## 📁 Project Structure
 
 ```
