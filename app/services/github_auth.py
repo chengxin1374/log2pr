@@ -4,6 +4,7 @@ This module provides JWT-based authentication for GitHub Apps, including
 JWT generation and Installation Access Token retrieval.
 """
 
+import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +14,8 @@ import httpx
 import jwt
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -154,24 +157,48 @@ class GitHubAuthManager:
         if cached:
             # Return cached token if not expiring soon
             if cached.expires_at > time.time() + self.TOKEN_REFRESH_BUFFER_SECONDS:
+                logger.debug("Using cached token for installation %d", installation_id)
                 return cached.token
 
-        # Generate new token
+        # Generate new JWT token
+        logger.debug("Generating JWT for app %s", self.app_id)
         jwt_token = self.generate_jwt()
+        logger.debug("JWT generated successfully, length: %d", len(jwt_token))
 
         url = f"{self.GITHUB_API_URL}/app/installations/{installation_id}/access_tokens"
         headers = {
             "Authorization": f"Bearer {jwt_token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "log2pr/0.1.0",
         }
 
-        # Use provided client or create a new one
+        logger.debug("Requesting installation token from: %s", url)
+
+        # Use provided client or create a new one with timeout
         should_close_client = http_client is None
-        client = http_client or httpx.AsyncClient()
+        client = http_client or httpx.AsyncClient(timeout=30.0)
 
         try:
             response = await client.post(url, headers=headers)
+
+            logger.debug("Response status: %d", response.status_code)
+
+            if response.status_code == 401:
+                logger.error("GitHub API authentication failed - check private key and app ID")
+                logger.debug("Response: %s", response.text)
+                response.raise_for_status()
+
+            if response.status_code == 403:
+                logger.error("GitHub API forbidden - check app permissions")
+                logger.debug("Response: %s", response.text)
+                response.raise_for_status()
+
+            if response.status_code == 404:
+                logger.error("GitHub API not found - check installation ID")
+                logger.debug("Response: %s", response.text)
+                response.raise_for_status()
+
             response.raise_for_status()
 
             data = response.json()
@@ -191,7 +218,18 @@ class GitHubAuthManager:
                 expires_at=expires_at,
             )
 
+            logger.info("Successfully obtained installation token for installation %d", installation_id)
+
             return token
+
+        except httpx.RemoteProtocolError as e:
+            logger.error("Remote protocol error: %s", str(e))
+            logger.error("This usually means: 1) Invalid JWT/private key, 2) Network issue, 3) GitHub API rate limit")
+            raise
+
+        except httpx.HTTPStatusError as e:
+            logger.error("HTTP error %d: %s", e.response.status_code, e.response.text)
+            raise
 
         finally:
             if should_close_client:

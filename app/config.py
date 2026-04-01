@@ -5,9 +5,13 @@ using pydantic-settings.
 """
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Get the project root directory (where .env file is located)
+PROJECT_ROOT = Path(__file__).parent.parent
 
 
 class Settings(BaseSettings):
@@ -27,7 +31,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -68,3 +72,11 @@ def get_settings() -> Settings:
         Settings class.
     """
     return Settings()
+
+
+def clear_settings_cache() -> None:
+    """Clear the settings cache.
+
+    Use this if you need to reload settings after environment changes.
+    """
+    get_settings.cache_clear()

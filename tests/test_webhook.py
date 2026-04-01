@@ -256,7 +256,7 @@ class TestWebhookEndpoint:
         payload = b'''{
             "action": "created",
             "issue": {"id": 1, "number": 42, "title": "Test Issue", "state": "open", "user": {"id": 1, "login": "test"}, "html_url": "https://github.com/test/repo/issues/42"},
-            "comment": {"id": 1, "body": "@auto-fix please help", "user": {"id": 1, "login": "test"}, "html_url": "https://github.com/test/repo/issues/42#issuecomment-1"},
+            "comment": {"id": 1, "body": "@auto-fix please help", "user": {"id": 1, "login": "test"}, "html_url": "https://github.com/test/repo/issues/42#issuecomment-1", "author_association": "OWNER"},
             "repository": {"id": 1, "name": "repo", "full_name": "test/repo", "owner": {"id": 1, "login": "test"}, "private": false},
             "installation": {"id": 12345},
             "sender": {"id": 1, "login": "test"}

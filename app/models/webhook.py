@@ -71,12 +71,14 @@ class Comment(BaseModel):
         body: Comment body/content.
         user: Comment author.
         html_url: URL to the comment on GitHub.
+        author_association: Author's permission level on the repository.
     """
 
     id: int
     body: str
     user: User
     html_url: str
+    author_association: str = "NONE"
 
 
 class Installation(BaseModel):
