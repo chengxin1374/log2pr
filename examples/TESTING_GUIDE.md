@@ -156,6 +156,80 @@ ZeroDivisionError: division by zero
 当除数为 0 时触发此错误。
 ```
 
+---
+
+## 跨文件错误测试 (Cross-file Bug Tests)
+
+### 测试 5: 跨文件 KeyError - 无效折扣码
+
+这个测试案例模拟真实的电商系统，错误跨越多个文件传播。
+
+```
+标题: KeyError in ecommerce discount validation
+
+内容:
+报错日志如下：
+
+Traceback (most recent call last):
+  File "examples/ecommerce/main.py", line 45, in test_keyerror_invalid_discount_code
+    result = order_service.process_order(order, user)
+  File "examples/ecommerce/services/order_service.py", line 58, in process_order
+    discount_rate = validate_discount_code(order.discount_code, VALID_DISCOUNT_CODES)
+  File "examples/ecommerce/utils/validators.py", line 25, in validate_discount_code
+    return valid_codes[code]
+KeyError: 'INVALID_CODE'
+
+错误传播路径：
+main.py -> order_service.py -> validators.py
+
+根因：validators.py:25 直接访问字典 key，未检查是否存在。
+```
+
+### 测试 6: 跨文件 TypeError - None 折扣率
+
+```
+标题: TypeError in ecommerce discount calculation
+
+内容:
+报错日志如下：
+
+Traceback (most recent call last):
+  File "examples/ecommerce/main.py", line 70, in test_typeerror_none_discount
+    result = order_service.process_order(order, user)
+  File "examples/ecommerce/services/order_service.py", line 64, in process_order
+    total = calculate_total(subtotal, discount_rate)
+  File "examples/ecommerce/utils/calculations.py", line 49, in calculate_total
+    discounted = apply_discount(subtotal, discount_rate)
+  File "examples/ecommerce/utils/calculations.py", line 27, in apply_discount
+    return amount * (1 - discount_rate)
+TypeError: unsupported operand type(s) for -: 'int' and 'NoneType'
+
+错误传播路径：
+main.py -> order_service.py -> calculations.py -> apply_discount()
+
+根因：calculations.py:27 未处理 discount_rate 为 None 的情况。
+```
+
+### 跨文件测试项目结构
+
+```
+examples/ecommerce/
+├── main.py              # 入口文件，运行测试用例
+├── models.py            # 数据模型 (User, Product, Order)
+├── services/
+│   ├── order_service.py   # 订单服务，协调各模块
+│   └── payment_service.py # 支付服务
+└── utils/
+    ├── calculations.py    # 计算工具 (包含 TypeError bug)
+    └── validators.py      # 验证工具 (包含 KeyError bug)
+```
+
+运行跨文件测试：
+```bash
+cd examples/ecommerce
+python main.py
+```
+
 ## 预期行为
 
 ### 成功流程
